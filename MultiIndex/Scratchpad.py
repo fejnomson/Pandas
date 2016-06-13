@@ -134,5 +134,5 @@ s[(s < -1) | (s > 0.5)]
 
 == STOPPED MULTIINDEXING DOCUMENTATION HERE: so search for this text to get started again ============================
 	"This index can back any axis of a pandas object, and the number of levels of the index is up to you:"
-
+http://pandas.pydata.org/pandas-docs/stable/advanced.html
 
