@@ -1,4 +1,8 @@
 
+== not sure if i should be learning python or github desktop in R or 
+ machine learning ==
+  == dont need github until hire; can push ML to after mba applications ==
+
 # MultiIndex / Advanced Indexing
 arrays = [['bar', 'bar', 'baz', 'baz', 'foo', 'foo', 'qux', 'qux'],
 					['one', 'two', 'one', 'two', 'one', 'two', 'one', 'two']]
@@ -60,6 +64,10 @@ df['bar']['one'] # so crazy
 # So here, there are 8 columns and 8 combinations in the multiindex.
 df = pd.DataFrame(np.random.randn(6, 6), index = index[:6], columns = index[:6])
 
+
+
+
+== TOOK A DIVE INTO INDEXING / SUBSETTING, FOR BACKGROUND (COMES BEFORE MULTIINDEXING / ADVANCED INDEXING) ===========
 df.loc[1, 1]
 df.loc['bar', 'one']
 df.iloc[1] # this is weird because it prints the row as a column. In r, it prints the row the same way that the dataframe prints
@@ -74,6 +82,9 @@ df.iloc[[1, 3]] # subset rows by index; is what expected
 df.iloc[pd.Series([1, 3])] # can use list or Series to subset, this is good becuase Series mimics some of the behavior of R data structure
 df.loc[['foo', 'bar']]['bar']['one'] # subsetting gets really crazy when the row labels and column labels are multiindex
 df.loc[('foo', 'one')] # subsets ROWS by 'foo' on key one and 'one' on key two
+df.loc[('foo', 'one')][('bar', 'one')] # subsets rows by 'foo' on key one and 'one' on key two; subsets columns based on 'bar' on key one and 'one' on key too.
+df.iloc[4, 0] # equivalent of above
+df.loc[('foo', 'one'), ('bar', 'one')] # equivalent of above, much cleaner
 
 
 x = pd.DataFrame({'x': [1, 2, 3], 'y': [3, 4, 5]})
@@ -84,3 +95,44 @@ s1 = pd.Series(np.random.randn(6),index=list('abcdef'))
 # .loc for index-based subsetting
 s1.loc['c':]
 s1.loc['b']
+
+df1 = pd.DataFrame(
+	np.random.randn(6,4),
+	index=list('abcdef'),
+	columns=list('ABCD')
+)
+df1.loc['a'] > 0 # tests the first ROW, accessed by LABEL, for being > 0
+df1['A'] > 0 # tests the first COLUMN, accessed by label, for being > 0
+df1.iloc[:,1] # more similar to R: df[, 2]
+df1.loc[:, df1.loc['a'] > 0] # return df1, but only columns where the first row is > 0
+
+
+labs_keeps = pd.Series(['B', 'D'])
+ix_keeps = pd.Series(df1.columns, index = df1.columns).isin(labs_keeps) # don't use # ix_keeps = pd.Series(df1.columns.values).isin(labs_keeps)
+# so df1.columns is an INDEX. This makes sense because indexes are generally
+# 	used for mapping out rows and columns. If you get the values, then it
+# 	simplifies an order to np.array, which is a building block of an index.
+# The point here is that when subsetting, .loc() uses the Index in ix_keeps
+# 	or labs_keeps to match the value to the right column. If you just have a
+# 	Series of booleans, .loc() doesn't know which value maps to which
+# 	columns. If you assign the the columns Index to the boolean Index, then
+# 	it knows where to map.
+df1.loc[:, ix_keeps] # you CAN'T subset with a boolean, at least using .loc, which is weird
+df1.loc[:, labs_keeps] # so you can just put a vector of field names in
+# Further:
+x = df1.loc['a'] > 0 # this boolean series keeps the column labels as the index
+x.index
+ix_keeps # but this one doesn't
+ix_keeps.index
+
+s = pd.Series(range(-3, 4))
+s[s > 0]
+s[(s < -1) | (s > 0.5)]
+== TOOK A DIVE INTO INDEXING / SUBSETTING, FOR BACKGROUND (COMES BEFORE MULTIINDEXING / ADVANCED INDEXING) ===========
+
+
+
+== STOPPED MULTIINDEXING DOCUMENTATION HERE: so search for this text to get started again ============================
+	"This index can back any axis of a pandas object, and the number of levels of the index is up to you:"
+
+
