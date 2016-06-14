@@ -154,9 +154,158 @@ df[df.isin(values)] # note that this keeps full NA rows if not included
 df[df.isin(values)].dropna(axis = 0, how = 'all') # drop if entire row is NAN
 df[df.isin(values)].dropna(axis = 1, how = 'all') # drop if entire column is NaN
 
-# match certain values with certain columns
-<stopped>
 
-# where() method and masking
-...stopped here...
+# match certain values with certain columns
+values = {
+	# each key is a column, and each value is a list of values you want to
+	# 	check inclusiveness for
+	'ids': ['a', 'b'],
+	'vals': [1, 3]
+}
+df.isin(values)
+# try 2 get same rows in each column
+values = {
+	'ids' : ['f'],
+	'ids2' : ['c'],
+	'vals' : [3]
+}
+df.isin(values)
+df[df.isin(values)]
+
+# any() and all()
+values = {
+	'ids': ['a', 'b'],
+	'ids2': ['a', 'c'],
+	'vals': [1, 3]
+}
+row_mask = df.isin(values).all(1) # all(axis = 0) for row ix, all(axis = 1) for columns
+# the call to .all(1) means: only return rows where every row is True
+# .all(0) is cols where every value is True
+# row_mask is a boolean Series of which rows are all true in df.isin(values)
+df[row_mask] # returns data frame where rows are all true from
+# 	df.isin(values).
+col_mask = df.isin(values).all(0)
+df.loc[:, col_mask] # must call .loc() method because you're not going
+# 	directly for rows or labels.
+
+
+# where() method and masking: to guarantee that selection output is same
+# 	shape as data you're selecting from
+s
+s[s > 0]
+len(s)
+len(s[s > 0])
+s.where(s > 0)
+len(s.where(s > 0))
+
+df = pd.DataFrame(
+	# np.array() is preferred object for making dfs
+	np.random.randn(8, 4),
+	index=dates,
+	columns=['A', 'B', 'C', 'D']
+)
+mydict = {
+	# So pd.DataFrame() takes in a dictinary object, where the keys are turned
+	# 	into column names and the values are turned into pd.Series() objects.
+	# Additionals
+	'A': np.random.randn(4),
+	'B': np.random.randn(4),
+	'C': np.random.randn(4),
+	'D': np.random.randn(4),
+}
+df = pd.DataFrame(mydict)
+
+df[df < 0 ] # VERY similar to R; filters via every value in df
+df.where(df < 0) # This is the implementatino of the above; the where() is
+# 	used to maintain the NA values - to avoid throwing out the values that
+# 	don't pass the test.
+df.where(df < 0, 999) # where() takes an argument to specify the replacement
+# 	value if the expression evaluates to False. So anything that ISN'T less
+# 	than zero is replaced with 999 here.
+df.where(df < 0, df - 999)
+# this is very similar to ifelse(<expression>, <keep value>, <replacement>)
+df2 = pd.DataFrame({
+	'A': np.repeat(1, 4),
+	'B': np.repeat(2, 4),
+	'C': np.repeat(3, 4),
+	'D': np.repeat(4, 4)
+})
+df.where(df < 0, df2) # can assign elements from one data frame to another
+# 	where some condition is met. Wondering if this is kinda like matrix
+# 	operations are handled in R - flattened into one long vector, then you
+# 	iterate through, then bind it back together into its original shape
+df.where(df < 0, other = df2, inplace = True) # THIS IS INSANE!!! MODIFY IN
+# 	PLACE?? AVOID COPYING EVERYTHING, ALL THE TIME, NO MATTER WHAT?
+# There's also axis and levels args, not experimenting with them for now
+
+
+# Set value based on boolean vals
+s2 = s.copy()
+s2[s2 == 3] = 999 # Love this.
+df2 = df.copy()
+df2[df2 < 0] = 'jeff' # amazing.
+# alignment
+df2 = df.copy()
+ix = df2[1:4] > 0 # data frame of bools, kinda like ix but 2 dimensional.
+# 	Subsets to rows 1:3, I think based on index; then tests every value for
+# 	being > 0.
+df2[ix] = 3
+
+# axis and level arguments
+df = pd.DataFrame({
+	'A': np.array([1, 2, 3, 4]),
+	'B': np.repeat(0, 4),
+	'C': np.repeat(0, 4),
+	'D': np.repeat(0, 4)
+})
+df2 = df.copy()
+df2.where(df2 > 0, df2['A'], axis = 'index') # Think df2['A'] is other arg
+df2.where(df2 > 0, df2['A'], axis = 0) # 'if df2[x, y] isn't > 3, replace it
+# 	with the value from df2[x, df2.A[y]]'
+df2.where(df2 == 0, df2['A'], axis = 0) # nothing changes here, because
+# 	everything evaluates to True.
+df2.where(df2 <= 0, df2.iloc[0], axis = 1) # Basically, if a value doesn't
+# 	pass the x <= 0 test, swap that value with the one from the same column
+# 	in the row you specified: if df[x, y] ~<= 0
+
+
+to_rep_row = pd.Series([
+	'Replaced - 0', 'Replaced - 1', 'Replaced - 2', 'Replaced - 3'
+])
+to_rep_col = pd.Series([
+	'Replaced - 0', 'Replaced - 1', 'Replaced - 2', 'Replaced - 3'
+])
+df = pd.DataFrame({
+	'A': range(0, 4),
+	'B': range(4, 8),
+	'C': range(8, 12),
+	'D': range(12, 16)
+})
+df2 = df.copy()
+df2.where(df2 % 2 == 0, to_rep_row, axis = 1) # not sure why this goes to nan. maybe, if you're going by row, it doens't want to reset the dtype of series, so it changes to nan when it sees that its a different dtype
+df2.where(df2 % 2 != 0, to_rep_col, axis = 0) # but this works as expected...
+
+# a slower, but equivalent version:
+df3 = df.copy()
+df.apply(lambda x, y: x.where(x > 10, y), y = df['A'])
+
+
+# mask is the opposite of where:
+df.where(df > 10)
+df.mask(df > 10)
+
+# where() accepts callables as condition AND other arg
+df3 = pd.DataFrame({
+	'A': [1, 2, 3],
+	'B': [4, 5, 6],
+	'C': [7, 8, 9]
+})
+df3.where(lambda x: x > 4, lambda x: x + 10) # guess this doesn't actually work...
+
+== STOPPED HERE: the QUERY() METHOD ==========================================
+	DataFrame objects have a query() method that allows selection using an expression.
+
+should probably skip query() and move on to duplciate data
+some of the stuff after this looks super important
+
 
