@@ -1,7 +1,5 @@
 
-== not sure if i should be learning python or github desktop in R or 
- machine learning ==
-  == dont need github until hire; can push ML to after mba applications ==
+
 
 # MultiIndex / Advanced Indexing
 arrays = [['bar', 'bar', 'baz', 'baz', 'foo', 'foo', 'qux', 'qux'],
