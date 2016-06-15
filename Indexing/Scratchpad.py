@@ -1,5 +1,7 @@
 
 
+
+
 == indexing and selecting data =================================================
 http://pandas.pydata.org/pandas-docs/stable/indexing.html
 
@@ -302,10 +304,123 @@ df3 = pd.DataFrame({
 })
 df3.where(lambda x: x > 4, lambda x: x + 10) # guess this doesn't actually work...
 
+
+# Duplicates
+df2 = pd.DataFrame({
+	'a': ['one', 'one', 'two', 'two', 'two', 'three', 'four'],
+	'b': ['x', 'y', 'x', 'y', 'x', 'x', 'x'],
+	'c': np.random.randn(7)
+})
+df2.duplicated('a') # first occurance kept, subsequent occurance thrown out
+df2.duplicated('a', keep = 'first') # same; default
+df2.duplicated('a', keep = 'last') # last occurance kept, each higher current occurance thrown out
+df2.duplicated('a', keep = False) # marks duplicates for ENTIRE GROUP. So in
+# 	c(1, 1, 2, 3, 3, 4), you'd identify c(1, 1, 3, 3) and c(2, 4). Throws
+# 	out groups that have ANY duplicates in them.
+df2.drop_duplicates('a') # sugar for df2.loc[df2.duplicated('a',keep='first')]
+df2.drop_duplicates('a', keep = 'last')
+df2.drop_duplicates('a', keep = False)
+# multiple columns
+df2.duplicated(['a', 'b'])
+df2.drop_duplicates(['a', 'b'])
+df2.drop_duplicates(['a', 'b', 'c'])
+# by index
+df3 = pd.DataFrame({
+		'a': np.arange(6),
+		'b': np.random.randn(6)
+	},
+	index = ['a', 'a', 'b', 'c', 'b', 'a']
+)
+df3.index.duplicated()
+df3[~df3.index.duplicated()]
+
+s = pd.Series([1,2,3], index=['a','b','c'])
+s.get('a') # alternate subsetting by key/index
+s.get('x', default = 'jeff') # if key is missing, you can supply default value
+
+
+# select()
+df.select(lambda x: x == 'A', axis = 1) # takes a function that operates on 
+# 	labels accross an axis.
+df.select(lambda x: x == 1, axis = 0)
+df.select(lambda x: df[x].sum() < 7, axis = 1) # this is pretty sweet. filter
+# 	df to columns where the sum of the column is < 7
+df.select(lambda x: df[x].sum() >= 7, axis = 1)
+df.select(lambda x: df.loc[x].sum() == 36, axis = 0) # go thru the index
+# 	(rows), check for sum == 36, then subset to rows that meet that condition
+df['Name'] = pd.Series(['jeff', 'jessica', 'solomon', 'jim'])
+df.select(lambda x: df[x].dtype == 'int32', axis = 1) # love this
+df.select(lambda x: df[x].dtype == 'object', axis = 1)
+
+# lookup
+dflookup = pd.DataFrame(
+	np.random.rand(20,4),
+	columns = ['A','B','C','D']
+)
+dflookup.lookup(list(range(0,10,2)), ['B','C','A','B','D']) # pull values
+# 	given list of row label and col labels; output is a vect / numpy array
+
+
+# index objects
+index = pd.Index(['e', 'd', 'a', 'b'])
+'d' in index
+index = pd.Index(['e', 'd', 'a', 'b'], name = 'something')
+index.name
+
+index = pd.Index(list(range(5)), name = 'rows')
+columns = pd.Index(['A', 'B', 'C'], name = 'cols')
+df = pd.DataFrame(
+	np.random.randn(5, 3),
+	index = index,
+	columns = columns
+)
+
+ind = pd.Index([1, 2, 3])
+ind.rename('apple') # returns a copy, doensn't mod in place
+ind.set_names(['apple'], inplace = True)
+ind.name
+ind.name = 'bob'
+
+# set operations on index objects
+a = pd.Index(['c', 'b', 'a'])
+b = pd.Index(['c', 'e', 'd'])
+a | b # union, unique vals
+a & b # in both indexes
+a.difference(b) # setdiff(a, b)
+b.difference(a) # setdiff(b, a)
+a.difference(b).union(b.difference(a)) # c(setdiff(a, b,), setdiff(b, a))
+a.sym_diff(b) # sugar for above # c(setdiff(a, b,), setdiff(b, a))
+a ^ b # ""
+
+# missing values - try to avoid missing values in indexes
+idx1 = pd.Index([1, np.nan, 3, 4])
+idx1
+idx1.fillna(2) # fillna na
+idx2 = pd.DatetimeIndex([
+	pd.Timestamp('2011-01-01'), pd.NaT, pd.Timestamp('2011-01-03')
+])
+idx2
+idx2.fillna(pd.Timestamp('2011-01-02')) # returns copy
+
+# set an index
+df2
+indexed1 = df2.set_index('a') # take a column in a df and set it as an index
+indexed1
+indexed2 = df2.set_index(['a', 'b']) # multiple columns to multiindex
+indexed2 # this is basically the opposite of df.reset_index()
+indexed2.reset_index()
+frame = df2.set_index('a', drop = False) # keeps existing index
+frame = frame.set_index(['a', 'b'], append = True) # still keeps existing index
+df2.set_index('a', drop = False)
+df2.set_index(['a', 'b'], inplace = True) # mod in place, don't append
+
+# reset the index
+<stopped here>
+
+
 == STOPPED HERE: the QUERY() METHOD ==========================================
 	DataFrame objects have a query() method that allows selection using an expression.
 
 should probably skip query() and move on to duplciate data
 some of the stuff after this looks super important
-
 
