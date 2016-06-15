@@ -415,12 +415,51 @@ df2.set_index('a', drop = False)
 df2.set_index(['a', 'b'], inplace = True) # mod in place, don't append
 
 # reset the index
-<stopped here>
+frame.reset_index(level = 1) # reset part of the index -> bring one level of
+# 	a multiindex into the df.
+frame.reset_index(level = [1, 2])
 
 
-== STOPPED HERE: the QUERY() METHOD ==========================================
+# RETURNING VIEW VS. COPY
+dfmi = pd.DataFrame(
+	data = [
+		list('abcd'),
+		list('efgh'),
+		list('ijkl'),
+		list('mnop')
+	],
+	columns = pd.MultiIndex.from_product([
+		['one','two'],
+		['first','second']
+	]),
+	index = ['jeff', 'jessica', 'solomon', 'jim']
+)
+dfmi['one']['second'] # chained, same as:
+first = dfmi['one'] # chained 1/1
+first['second'] # chained 2/2
+dfmi.loc[:, ('one', 'second')] # not chained; preferred
+# the problem here is that, if youi're assigning values, you dont' know how
+# 	pandas will assign it, unless you avoid chaining.
+dfb = pd.DataFrame({
+	'a' : ['one', 'one', 'two', 'three', 'two', 'one', 'six'],
+	'c' : np.arange(7)
+})
+dfb['c'][dfb.a.str.startswith('o')] = 42 # This is never an issue in R...
+
+dfc = pd.DataFrame({
+	'A' : ['aaa','bbb','ccc'],
+	'B' : [1,2,3]
+})
+dfc.loc[0, 'A'] = 11 # preferred value setting
+
+dfc = dfc.copy()
+dfc['A'][0] = 111 # result not guaranteed
+
+dfc.loc[0]['A'] = 1111 # will never work
+
+
+
+== SKIPPED: the QUERY() METHOD ==========================================
 	DataFrame objects have a query() method that allows selection using an expression.
 
-should probably skip query() and move on to duplciate data
-some of the stuff after this looks super important
 
