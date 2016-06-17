@@ -334,7 +334,129 @@ s3.ix[('a', 'b'):('b', 'a')] # this works becuase lex sort level is same as
 
 
 
+# TAKE METHODS
+# Either list or ndarray
+index = pd.Index(np.random.randint(0, 1000, 10))
+positions = [0, 9, 3]
+index[positions]
+index.take(positions) # no idea why you'd write out .take() instead of using
+# 	base subscripting???
+ser = pd.Series(np.random.randn(10))
+ser.iloc[positions]
+ser.take(positions) # not sure why you'd use take instead of iloc?
+
+# for rows / columns in dfs, list or ndarray to specific row / col ix
+frm = pd.DataFrame(np.random.randn(5, 3))
+frm.take([1, 4, 3])
+frm.take([0, 2], axis = 1)
+frm.take([1, 4, 3], axis = 0)
+
+# But .take() not intended to work with booleans
+# .take() has better performance than indexing mehtods that handle a wider
+# 	range of inputs.
+arr = np.random.randn(10)
+arr.take([False, False, True, True]) # this doesn't make any sense
+arr[[0, 1]]
+ser = pd.Series(np.random.randn(10))
+ser.take([False, False, True, True])
+ser.ix[[0, 1]]
 
 
-=== STOPPED HERE AT TAKE METHODS ==================
-	Similar to numpy ndarrays, pandas Index, Series, and DataFrame 
+# INDEX TYPES
+# have to look up DatetimeIndex, PeriodIndex, and TimedeltaIndex separately
+# 	per here:
+# We have discussed MultiIndex in the previous sections pretty extensively.
+#		DatetimeIndex and PeriodIndex are shown here. TimedeltaIndex are here.
+
+# CategoricalIndex
+# good for indexing with duplicates
+df = pd.DataFrame({
+	'A': np.arange(6),
+	'B': list('aabbca')
+})
+df['B'] = df['B'].astype('category', categories=list('cab'))
+# So it looks like your'e converting a string series into a categorical one
+# 	here, and explicitly naming the 'levels' of the categories
+df.dtypes
+df.B.cat.categories
+df2 = df.set_index('B') # setting the categorical field to the index makes 
+# 	the categorical index
+df2.index
+
+df2.loc['JEFF'] # key must be a category level
+df2.loc['a'].index # subsetting to a column retains the index
+
+df2.sort_index() # sorting by index retains the original order of the
+# 	categories, NOT ALPHANUMERIC
+df2.groupby(level = 0).sum() # groupby operations retain the original order
+# 	of the index as well.
+df2.groupby(level = 0).sum().index
+df2.reindex(['a', 'e']) # reindexing assigns a list of the type of what you
+# 	pass to the reindex() function. So list -> index; categorical -> 
+# 	categoricalindex, etc. Note that this allows you to put values into the
+# 	index that AREN'T in any category
+df2.reindex(['a', 'e']).index
+df2.reindex(pd.Categorical(['a', 'e'], categories = list('abcde')))
+df2.reindex(pd.Categorical(['a', 'e'], categories = list('abcde'))).index
+
+
+# Int64Index and RangeIndex
+# these are the base indexes that are used. RangeIndex is optimised and is
+# 	for monotonic ordered sets.
+
+# Float64Index
+# Index for floating or mixed int-float values in index creation
+indexf = pd.Index([1.5, 2, 3, 4.5, 5])
+indexf
+sf = pd.Series(range(5), index=indexf)
+# indexing is still label-based
+sf[3]
+sf[3.0]
+sf.ix[3]
+sf.ix[3.0]
+sf.loc[3]
+sf.loc[3.0]
+sf.iloc[3]
+sf.iloc[3.0] # but you have to use integer for integer-based indexing (which
+# 	makes sense becuase all the labels are not integer)
+
+# slicing is always poisitonal on values of index for [], ix, loc; always
+# 	positional for iloc.
+sf[2:4] # values where the index is between 2 and 4
+sf.ix[2:4]
+sf.loc[2:4]
+sf.iloc[2:4] # values where the VALUES are btwn 2 and 4; ix doesn't matter
+
+# can slice with floats accross a float index
+sf[1.9:3.9]
+sf.loc[1.9:3.9]
+
+pd.Series(range(5))[3.5] # but if it isn't a float, you can slice with a
+# 	float
+pd.Series(range(5))[3.5:4.5]
+
+dfir = pd.concat([
+	pd.DataFrame(
+		np.random.randn(5,2),
+		index=np.arange(5) * 250.0,
+		columns=list('AB')
+	),
+	pd.DataFrame(
+		np.random.randn(6,2),
+		index=np.arange(4,10) * 250.1,
+		columns=list('AB')
+	)
+])
+# This is kinda like rbind, but instead of appending one to antoher, your'e 
+# 	appending one to another, then sorting by index
+# Use case of this typ e of float-based index slicing: if you have data
+# 	that's indexed to the millisecond, and you want to look at a slice of
+# 	the data during a certain time frame you'd do data.loc[start float:endfloat]
+dfir[0:1000.4]
+dfir.loc[0:1001, 'A']
+dfir.loc[1000.4] # THE LABELS ARE THE TIME PERIOD YOURE LOOKKNG AT!!
+dfir[0:1000] # To pull the first second (1000 milliseconds) of data...
+dfir.iloc[0:5] # as oppopsed to the first 6 rows...
+
+== END ===========================
+
