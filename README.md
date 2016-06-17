@@ -1,3 +1,4 @@
-# Pandas
 Storing info as working thru pandas documentation
-extra line in readme
+
+Cookbook for further examples:
+http://pandas.pydata.org/pandas-docs/stable/cookbook.html
