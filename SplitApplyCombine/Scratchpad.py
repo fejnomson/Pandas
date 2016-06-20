@@ -195,26 +195,29 @@ ts_roll.mean() # then apply tons of rolling functions to that object
 
 == tons of tranformation stuff ==
 
-data_df = <??>
-countries = array(['US', 'UK', 'GR', 'JP'])
-key = countries[random.randint(0, 4, 1000)]
+data_df = pd.DataFrame(np.random.randn(10, 3), columns = ['A', 'B', 'C'])
+data_df.where(~(data_df < -0.50), np.nan, inplace = True)
+countries = np.array(['US', 'UK', 'GR', 'JP'])
+key = countries[np.random.randint(0, 4, data_df.shape[0])]
 grouped = data_df.groupby(key)
+grouped.count()
+	# Intermezzo:
+	data_df.fillna(999) # fill nas in object
+	data_df.mean() # can do colwise or rowwise means via axis argument
+	data_df.fillna(data_df.mean())
+f = lambda x: x.fillna(x.mean()) # f(pd.Series([1, np.nan, 3]))
+transformed = grouped.transform(f)
+# So here, you're grouping the data frame by country; making an anonymous
+# 	function for filling a series or dataframe nas with a mean; then calling
+# 	the anon function on the data for every country, while maintaining the
+# 	same number of rows and cols. (not sure why this has to be transform and
+# 	can't be apply?)
 
 
 # FILTRATION
 sf = Series([1, 1, 2, 3, 3, 3])
 sf.groupby(sf).filter(lambda x: x.sum() > 2) # filters out observations in the series where the sum for the whole gropu is over 2
 sf.groupby(sf) # is a clean way of breaking a series up into groups based on unique values
-
-
-
-
-
-
-
-
-
-
 
 
 
