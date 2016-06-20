@@ -212,16 +212,203 @@ transformed = grouped.transform(f)
 # 	the anon function on the data for every country, while maintaining the
 # 	same number of rows and cols. (not sure why this has to be transform and
 # 	can't be apply?)
+data_df.index = key
+data_df.sort_index(inplace = True)
+gpd = data_df.groupby(level = 0)
+
+f(gpd.get_group('US')) # at group level, so split apply combine
+transd = gpd.transform(f) # output has same indexes as input
+applied = gpd.apply(f) # is it trying to call f() on the whole df?? # not sure why apply doesn't work...
+gpd.apply(lambda x: x.iloc[0, 0])
+gpd.apply(lambda x: f(x)) 
+
+data_df['Key'] = key
+gpd = data_df.groupby('Key')
+transd = gpd.transform(f)
+applied = gpd.apply(f) # still no idea why this doesn't work. Might be
+# 	because transform() has a mandate to keep original shape, and apply
+# 	doesn't - so maybe apply() is trying to simplfy the results here, hence
+# 	the shape error. Might be worth checking output from f() on each group
+# 	to pinpoint the error.
+group1 = gpd.get_group(list(gpd.groups.keys())[0])
+group2 = gpd.get_group(list(gpd.groups.keys())[1])
+group3 = gpd.get_group(list(gpd.groups.keys())[2])
+group4 = gpd.get_group(list(gpd.groups.keys())[3])
+group1
+f(group1) # same shape
+group2
+f(group2) # same shape
+group3
+f(group3) # same shape
+group4
+f(group4) # same shape
+# This didn't work...
+
 
 
 # FILTRATION
-sf = Series([1, 1, 2, 3, 3, 3])
+sf = pd.Series([1, 1, 2, 3, 3, 3])
 sf.groupby(sf).filter(lambda x: x.sum() > 2) # filters out observations in the series where the sum for the whole gropu is over 2
 sf.groupby(sf) # is a clean way of breaking a series up into groups based on unique values
+# group wise filtering
 
 
+dff = pd.DataFrame({'A': np.arange(8), 'B': list('aabbbbcc')})
+dff.groupby('B').filter(lambda x: len(x) > 2) # throw out groups where the
+# 	group is less than 2 obs.
+dff['C'] = np.arange(8)
+dff.groupby('B').filter(lambda x: len(x['C']) > 2) # if multiple columns,
+# 	you need to specify the one you're using for filtering.
+
+grouped = df.groupby('A')
+
+tsdf = pd.DataFrame(
+	np.random.randn(1000, 3),
+	index=pd.date_range('1/1/2000', periods=1000),
+	columns=['A', 'B', 'C']
+)
+tsdf.ix[::2] = np.nan
+grouped = tsdf.groupby(lambda x: x.year)
+grouped.fillna(method='pad') # fill in nas from adjacent rows
 
 
+s = pd.Series([9, 8, 7, 5, 19, 1, 4.2, 3.3])
+g = pd.Series(list('abababab'))
+gb = s.groupby(g)
+gb.nsmallest(3)
+gb.nlargest(3)
 
+
+df = pd.DataFrame({
+	'A' : ['foo', 'bar', 'foo', 'bar', 'foo', 'bar', 'foo', 'foo'],
+	'B' : ['one', 'one', 'two', 'three', 'two', 'two', 'one', 'three'],
+	'C' : np.random.randn(8),
+	'D' : np.random.randn(8)
+})
+grouped = df.groupby('A')
+grouped['C'].apply(lambda x: x.describe())
+# call describe() on groups defined by 'C' column
+grouped = df.groupby('A')['C']
+def f(group):
+	return pd.DataFrame({
+		'original' : group, 'demeaned' : group - group.mean()
+	})
+grouped.apply(f)
+
+def f(x):
+	return pd.Series([ x, x**2 ], index = ['x', 'x^2'])
+s
+s.apply(f)
+# split apply combine on a series, then upcast into a data frame.
+# apply() can be a reducer, transformer, or filter, depending on what you
+# 	pass.
+
+df.groupby('A').std()
+# 'nuisance' columns are dropped ('B' here because you didn't group by it)
+
+data = pd.Series(np.random.randn(100))
+factor = pd.qcut(data, [0, .25, .5, .75, 1.])
+data.groupby(factor).mean()
+# order of levels preseved if grouping key is categorical object
+# this data type is crazy; the factor label is a range of floats
+
+
+# more specific grouping ways
+import datetime
+df = pd.DataFrame({
+	'Branch' : 'A A A A A A A B'.split(),
+	'Buyer': 'Carl Mark Carl Carl Joe Joe Joe Carl'.split(),
+	'Quantity': [1,3,5,1,8,1,9,3],
+	'Date' : [
+		datetime.datetime(2013,1,1,13,0),
+		datetime.datetime(2013,1,1,13,5),
+		datetime.datetime(2013,10,1,20,0),
+		datetime.datetime(2013,10,2,10,0),
+		datetime.datetime(2013,10,1,20,0),
+		datetime.datetime(2013,10,2,10,0),
+		datetime.datetime(2013,12,2,12,0),
+		datetime.datetime(2013,12,2,14,0),
+	]
+})
+df.groupby([pd.Grouper(freq = '1M', key = 'Date'), 'Buyer']).sum()
+# looks like you can group the data first by month - '1M' within the 'Date'
+# 	field, then by 'Buyer'; then take the sum
+df = df.set_index('Date')
+df['Date'] = df.index + pd.offsets.MonthEnd(2) # something like go back a
+# 	month within the index
+df.groupby([pd.Grouper(freq='6M',key='Date'),'Buyer']).sum() # every 6
+# 	months. this uses the Date field
+df.groupby([pd.Grouper(freq='6M',level='Date'),'Buyer']).sum() # still every
+# 	6 months, but uses index which is date, but adjusted for something.
+
+
+# taking first rows of each group
+df = pd.DataFrame([[1, 2], [1, 4], [5, 6]], columns=['A', 'B'])
+g = df.groupby('A')
+g.head(1) # just spec the number of rows you want using head / tail
+g.tail(1)
+
+# take nth row of each group
+df = pd.DataFrame([[1, np.nan], [1, 4], [5, 6]], columns=['A', 'B'])
+g = df.groupby('A')
+g.nth(0)
+g.nth(-1) # starts going backwards, so len(x) - 1
+g.nth(1) # drops '5', which doesn't have anything at ix[1]
+g.nth(0, dropna = 'any') # throws out NA
+g.first() # gets first non-na value / drops nas, then gets first value
+g.nth(-1, dropna = 'any')
+g.last()
+g.B.nth(0, dropna=True) # gets column by, grouped by column A
+
+df = pd.DataFrame([[1, np.nan], [1, 4], [5, 6]], columns=['A', 'B'])
+g = df.groupby('A',as_index=False)
+g.nth(0)
+g.nth(-1)
+# if you don't group by index, it won't throw out Na values
+
+
+business_dates = pd.date_range(start='4/1/2014', end='6/30/2014', freq='B')
+df = pd.DataFrame(1, index=business_dates, columns=['a', 'b'])
+df.groupby((df.index.year, df.index.month)).nth([0, 3, -1])
+# take the first, 4th, and second to last from every year-month combindation
+
+
+df = pd.DataFrame(list('aaabba'), columns=['A'])
+df
+
+df.groupby('A').cumcount() # this'd be great for consec days worked in week.
+df.groupby('A').cumcount(ascending=False)  # order in which each appears
+# 	within the group
+
+
+np.random.seed(1234)
+df = pd.DataFrame(np.random.randn(50, 2))
+df['g'] = np.random.choice(['A', 'B'], size=50)
+df.loc[df['g'] == 'B', 1] += 3
+df.groupby('g').boxplot()
+
+
+# regrouping by factor
+df = pd.DataFrame({'a':[1,0,0], 'b':[0,1,0], 'c':[1,0,0], 'd':[2,3,4]})
+df.groupby(df.sum(), axis=1).sum()
+# rowsums for column groups; two groups are columsn that sum to one or
+# 	that sum to 9.
+
+
+df = pd.DataFrame({
+	'a':  [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2],
+	'b':  [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
+	'c':  [1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0],
+	'd':  [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+})
+def compute_metrics(x):
+	result = {'b_sum': x['b'].sum(), 'c_mean': x['c'].mean()}
+	return pd.Series(result, name = 'metrics')
+result = df.groupby('a').apply(compute_metrics)
+# returning a names series for each group chunk allows you to peice output
+# 	into data frame; useful for stacking.
+
+pd.Series({'first': 1, 'second': 2}) # didn't know you could have named
+# 	series
 
 
